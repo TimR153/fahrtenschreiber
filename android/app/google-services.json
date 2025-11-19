@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "401717341810",
+    "project_id": "fahrtenschreiber-86623",
+    "storage_bucket": "fahrtenschreiber-86623.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:401717341810:android:f1595b939e095fafd49ceb",
+        "android_client_info": {
+          "package_name": "com.example.fahrtenschreiber"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCctDSPyUbLjOC-J7Pw9xz43PM3_xjedlA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
