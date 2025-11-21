@@ -1,5 +1,4 @@
 import 'package:fahrtenschreiber/viewmodels/auth_viewmodel.dart';
-import 'package:fahrtenschreiber/views/fahrten_page.dart';
 import 'package:fahrtenschreiber/views/home_page.dart';
 import 'package:fahrtenschreiber/views/login_page.dart';
 import 'package:fahrtenschreiber/views/main_navigation.dart';

@@ -7,6 +7,8 @@ class RegistrationPage extends StatelessWidget {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPwController = TextEditingController();
 
+  RegistrationPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final authViewModel = Provider.of<AuthViewModel>(context);
