@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FahrtHinzufuegenDialog extends StatefulWidget {
   const FahrtHinzufuegenDialog({super.key});
@@ -40,7 +42,7 @@ class _FahrtHinzufuegenDialogState extends State<FahrtHinzufuegenDialog> {
     TextEditingController str,
     TextEditingController nr,
     TextEditingController plz,
-    TextEditingController ort
+    TextEditingController ort,
   ) {
     // Rückgabe als "Straße Hausnummer, PLZ Ort"
     List<String> parts = [];
@@ -65,12 +67,65 @@ class _FahrtHinzufuegenDialogState extends State<FahrtHinzufuegenDialog> {
   }
 
   Future<void> _openInMaps(String addr) async {
-    final url = Uri.encodeFull('https://www.google.com/maps/search/?api=1&query=$addr');
+    final url = Uri.encodeFull(
+      'https://www.google.com/maps/search/?api=1&query=$addr',
+    );
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Karten-App kann nicht geöffnet werden.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Karten-App kann nicht geöffnet werden.')),
+      );
+    }
+  }
+
+  Future<void> _saveFahrt() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Nicht eingeloggt.')));
+      return;
+    }
+
+    final startAdresse = _composeAddress(
+      _startStrasseController,
+      _startHausnummerController,
+      _startPlzController,
+      _startOrtController,
+    );
+
+    final zielAdresse = _composeAddress(
+      _zielStrasseController,
+      _zielHausnummerController,
+      _zielPlzController,
+      _zielOrtController,
+    );
+
+    final kmText = _kmController.text.trim();
+    final kmStand = kmText.isEmpty ? null : int.tryParse(kmText);
+
+    try {
+      await FirebaseFirestore.instance.collection('fahrten').add({
+        'userId': user.uid,
+        'createdAt': FieldValue.serverTimestamp(),
+        'kmStand': kmStand,
+        'startAdresse': startAdresse,
+        'zielAdresse': zielAdresse,
+        'startStrasse': _startStrasseController.text.trim(),
+        'startHausnummer': _startHausnummerController.text.trim(),
+        'startPlz': _startPlzController.text.trim(),
+        'startOrt': _startOrtController.text.trim(),
+        'zielStrasse': _zielStrasseController.text.trim(),
+        'zielHausnummer': _zielHausnummerController.text.trim(),
+        'zielPlz': _zielPlzController.text.trim(),
+        'zielOrt': _zielOrtController.text.trim(),
+      });
+      Navigator.of(context).pop(); // Dialog schließen
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Fehler beim Speichern: $e')));
     }
   }
 
@@ -87,19 +142,21 @@ class _FahrtHinzufuegenDialogState extends State<FahrtHinzufuegenDialog> {
               // Kilometerstand
               TextFormField(
                 controller: _kmController,
-                decoration: const InputDecoration(labelText: 'Kilometerstand (optional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Kilometerstand (optional)',
+                ),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
-              Text(
-                'ODER',
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
+              Text('ODER', style: Theme.of(context).textTheme.labelSmall),
               const SizedBox(height: 16),
               // Startadresse Felder
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Startadresse', style: Theme.of(context).textTheme.labelMedium),
+                child: Text(
+                  'Startadresse',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
               ),
               Row(
                 children: [
@@ -150,8 +207,10 @@ class _FahrtHinzufuegenDialogState extends State<FahrtHinzufuegenDialog> {
                       );
                       if (addr.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Bitte zuerst Adresse eingeben.')));
+                          const SnackBar(
+                            content: Text('Bitte zuerst Adresse eingeben.'),
+                          ),
+                        );
                         return;
                       }
                       _openInMaps(addr);
@@ -163,7 +222,10 @@ class _FahrtHinzufuegenDialogState extends State<FahrtHinzufuegenDialog> {
               // Zieladresse Felder
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Zieladresse', style: Theme.of(context).textTheme.labelMedium),
+                child: Text(
+                  'Zieladresse',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
               ),
               Row(
                 children: [
@@ -214,8 +276,10 @@ class _FahrtHinzufuegenDialogState extends State<FahrtHinzufuegenDialog> {
                       );
                       if (addr.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Bitte zuerst Adresse eingeben.')));
+                          const SnackBar(
+                            content: Text('Bitte zuerst Adresse eingeben.'),
+                          ),
+                        );
                         return;
                       }
                       _openInMaps(addr);
@@ -233,22 +297,28 @@ class _FahrtHinzufuegenDialogState extends State<FahrtHinzufuegenDialog> {
           child: const Text('Abbrechen'),
         ),
         FilledButton(
-          onPressed: () {
+          onPressed: () async {
             // Mindestens ein Feld muss ausgefüllt sein!
             bool kmOk = _kmController.text.trim().isNotEmpty;
-            bool startOk = _startStrasseController.text.trim().isNotEmpty &&
+            bool startOk =
+                _startStrasseController.text.trim().isNotEmpty &&
                 _startOrtController.text.trim().isNotEmpty;
-            bool zielOk = _zielStrasseController.text.trim().isNotEmpty &&
+            bool zielOk =
+                _zielStrasseController.text.trim().isNotEmpty &&
                 _zielOrtController.text.trim().isNotEmpty;
+
             if (!kmOk && !(startOk && zielOk)) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                    content: Text('Bitte entweder KM-Stand ODER Start UND Ziel komplett angeben.')),
+                  content: Text(
+                    'Bitte entweder KM-Stand ODER Start UND Ziel komplett angeben.',
+                  ),
+                ),
               );
               return;
             }
-            // Daten speichern …
-            Navigator.of(context).pop();
+
+            await _saveFahrt();
           },
           child: const Text('Speichern'),
         ),

@@ -24,10 +24,7 @@ class _MainNavigationState extends State<MainNavigation> {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
@@ -43,11 +40,11 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
           NavigationDestination(
             icon: Icon(Icons.stacked_bar_chart),
-            label: 'Statistik',
+            label: 'Auto und Kostenstelle',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person),
-            label: 'Profil',
+            icon: Icon(Icons.settings),
+            label: 'Einstellungen',
           ),
         ],
       ),
